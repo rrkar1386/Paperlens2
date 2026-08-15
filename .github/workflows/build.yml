@@ -29,6 +29,13 @@ jobs:
         run: |
           sed -i 's|int page = Integer.parseInt(url.substring("app://page/"));|int page = Integer.parseInt(url.substring("app://page/".length()));|' app/src/main/java/com/smartpdf/reader/ReaderActivity.java
 
+      - name: Configure Maven mirror
+        working-directory: project
+        run: |
+          find . -name "settings.gradle" -o -name "settings.gradle.kts" | while read f; do
+            sed -i '/repositories {/a\        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }' "$f"
+          done
+
       - name: Build APK
         working-directory: project
         run: |
