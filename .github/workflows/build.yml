@@ -18,15 +18,15 @@ jobs:
         run: |
           mkdir project
           unzip -q SmartPDFReader_V1_Android_Project.zip -d project
-          echo "Project contents:"
-          find project -maxdepth 3 -type f | head -50
 
-      - name: Find and build Android project
+      - name: Fix PDFBox dependency
+        working-directory: project
         run: |
-          GRADLEW=$(find project -name gradlew -type f | head -1)
-          PROJECT_DIR=$(dirname "$GRADLEW")
-          echo "Android project found at: $PROJECT_DIR"
-          cd "$PROJECT_DIR"
+          find . -name "build.gradle" -type f -exec sed -i 's/com.tom-roush:pdfbox-android:2.0.27/com.tom-roush:pdfbox-android:2.0.27.0/g' {} +
+
+      - name: Build APK
+        working-directory: project
+        run: |
           chmod +x gradlew
           ./gradlew assembleDebug
 
@@ -34,4 +34,4 @@ jobs:
         uses: actions/upload-artifact@v4
         with:
           name: SmartPDFReader-debug
-          path: project/**/app/build/outputs/apk/debug/app-debug.apk
+          path: project/app/build/outputs/apk/debug/app-debug.apk
