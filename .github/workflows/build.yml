@@ -22,7 +22,7 @@ jobs:
       - name: Fix PDFBox dependency
         working-directory: project
         run: |
-          find . -name "build.gradle" -type f -exec sed -i 's/com.tom_roush:pdfbox-android:[^"]*/com.tom_roush:pdfbox-android:2.0.27.0/g' {} \;
+          find . -name "build.gradle" -type f -exec sed -i 's/com.tom-roush:pdfbox-android:[^"]*/com.tom-roush:pdfbox-android:2.0.27.0/g' {} \;
 
       - name: Fix ReaderActivity page parsing
         working-directory: project
