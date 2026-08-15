@@ -16,34 +16,66 @@ jobs:
 
       - name: Extract Android project
         run: |
-          mkdir project
+          mkdir -p project
           unzip -q SmartPDFReader_V1_Android_Project.zip -d project
 
-      - name: Fix PDFBox dependency
+      - name: Fix Android project
         working-directory: project
         run: |
-          find . -name "build.gradle" -type f -exec sed -i 's/com.tom-roush:pdfbox-android:[^"]*/com.tom-roush:pdfbox-android:2.0.27.0/g' {} \;
+          python3 - <<'PY'
+          import os
+          import re
 
-      - name: Fix ReaderActivity page parsing
-        working-directory: project
-        run: |
-          sed -i 's|int page = Integer.parseInt(url.substring("app://page/"));|int page = Integer.parseInt(url.substring("app://page/".length()));|' app/src/main/java/com/smartpdf/reader/ReaderActivity.java
+          # Find all Gradle build files
+          for root, dirs, files in os.walk("."):
+              for file in files:
+                  if file == "build.gradle":
+                      path = os.path.join(root, file)
 
-      - name: Configure Maven mirror
-        working-directory: project
-        run: |
-          find . -name "settings.gradle" -o -name "settings.gradle.kts" | while read f; do
-            sed -i '/repositories {/a\        maven { url "https://maven-central.storage-download.googleapis.com/maven2/" }' "$f"
-          done
+                      with open(path, "r", encoding="utf-8") as f:
+                          text = f.read()
+
+                      # Ensure PdfBox-Android uses the valid Maven Central version
+                      text = re.sub(
+                          r"com\.tom-roush:pdfbox-android:[0-9.]+",
+                          "com.tom-roush:pdfbox-android:2.0.27.0",
+                          text
+                      )
+
+                      with open(path, "w", encoding="utf-8") as f:
+                          f.write(text)
+
+                      print("Checked:", path)
+
+          # Fix the ReaderActivity page-number parsing
+          for root, dirs, files in os.walk("."):
+              for file in files:
+                  if file == "ReaderActivity.java":
+                      path = os.path.join(root, file)
+
+                      with open(path, "r", encoding="utf-8") as f:
+                          text = f.read()
+
+                      text = text.replace(
+                          'Integer.parseInt(url.substring("app://page/"))',
+                          'Integer.parseInt(url.substring("app://page/".length()))'
+                      )
+
+                      with open(path, "w", encoding="utf-8") as f:
+                          f.write(text)
+
+                      print("Checked:", path)
+          PY
 
       - name: Build APK
         working-directory: project
         run: |
           chmod +x gradlew
-          ./gradlew assembleDebug
+          ./gradlew assembleDebug --stacktrace
 
       - name: Upload APK
         uses: actions/upload-artifact@v4
         with:
           name: SmartPDFReader-debug
-          path: project/app/build/outputs/apk/debug/app-debug.apk
+          path: project/**/build/outputs/apk/debug/*.apk
+          if-no-files-found: error
