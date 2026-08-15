@@ -1,0 +1,37 @@
+name: Build SmartPDFReader APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Extract Android project
+        run: |
+          mkdir project
+          unzip -q SmartPDFReader_V1_Android_Project.zip -d project
+          echo "Project contents:"
+          find project -maxdepth 3 -type f | head -50
+
+      - name: Find and build Android project
+        run: |
+          GRADLEW=$(find project -name gradlew -type f | head -1)
+          PROJECT_DIR=$(dirname "$GRADLEW")
+          echo "Android project found at: $PROJECT_DIR"
+          cd "$PROJECT_DIR"
+          chmod +x gradlew
+          ./gradlew assembleDebug
+
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartPDFReader-debug
+          path: project/**/app/build/outputs/apk/debug/app-debug.apk
