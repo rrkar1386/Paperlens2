@@ -31,7 +31,17 @@ jobs:
           mkdir -p project/app/src/main/java/com/smartpdfreader
           mkdir -p project/app/src/main/res/layout
           mkdir -p project/app/src/main/res/values
+            - name: Build APK
+        working-directory: project
+        run: |
+          chmod +x gradlew
+          ./gradlew assembleDebug
 
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartPDFReader-debug
+          path: project/app/build/outputs/apk/debug/app-debug.apk
           cat > project/settings.gradle <<'EOF'
           pluginManagement {
               repositories {
