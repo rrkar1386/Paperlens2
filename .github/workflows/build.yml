@@ -75,7 +75,7 @@ jobs:
 
               defaultConfig {
                   applicationId 'com.smartpdfreader'
-                  minSdk 21
+                  minSdk 23
                   targetSdk 37
                   versionCode 1
                   versionName '1.0'
@@ -98,12 +98,13 @@ jobs:
                   <activity
                       android:name=".MainActivity"
                       android:exported="true">
+
                       <intent-filter>
                           <action android:name="android.intent.action.MAIN" />
                           <category android:name="android.intent.category.LAUNCHER" />
                       </intent-filter>
-                  </activity>
 
+                  </activity>
               </application>
           </manifest>
           EOF
@@ -113,7 +114,6 @@ jobs:
               <style name="AppTheme"
                   parent="android:style/Theme.Material.Light.NoActionBar">
                   <item name="android:fontFamily">sans</item>
-                  <item name="android:colorAccent">#6750A4</item>
                   <item name="android:navigationBarColor">#000000</item>
                   <item name="android:statusBarColor">#000000</item>
                   <item name="android:windowLightStatusBar">false</item>
@@ -123,13 +123,14 @@ jobs:
 
           cat > project/app/src/main/res/layout/activity_main.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <LinearLayout
               xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical"
-              android:padding="24dp"
-              android:gravity="center">
+              android:gravity="center"
+              android:padding="24dp">
 
               <TextView
                   android:layout_width="wrap_content"
@@ -137,64 +138,32 @@ jobs:
                   android:text="Smart PDF Reader"
                   android:textSize="28sp"
                   android:textStyle="bold"
-                  android:layout_marginBottom="12dp"/>
-
-              <TextView
-                  android:layout_width="wrap_content"
-                  android:layout_height="wrap_content"
-                  android:text="Open a PDF to begin reading"
-                  android:textSize="17sp"
-                  android:layout_marginBottom="32dp"/>
+                  android:layout_marginBottom="24dp"/>
 
               <Button
                   android:id="@+id/openPdfButton"
                   android:layout_width="wrap_content"
                   android:layout_height="wrap_content"
                   android:text="Open PDF"/>
+
           </LinearLayout>
           EOF
 
           cat > project/app/src/main/res/layout/activity_reader.xml <<'EOF'
           <?xml version="1.0" encoding="utf-8"?>
+
           <LinearLayout
               xmlns:android="http://schemas.android.com/apk/res/android"
               android:layout_width="match_parent"
               android:layout_height="match_parent"
               android:orientation="vertical">
 
-              <LinearLayout
-                  android:layout_width="match_parent"
-                  android:layout_height="wrap_content"
-                  android:orientation="horizontal"
-                  android:gravity="center_vertical"
-                  android:padding="8dp">
-
-                  <Button
-                      android:id="@+id/backButton"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="Back"/>
-
-                  <Button
-                      android:id="@+id/originalButton"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="Original PDF"/>
-
-                  <Button
-                      android:id="@+id/pageButton"
-                      android:layout_width="wrap_content"
-                      android:layout_height="wrap_content"
-                      android:text="Go to page"/>
-              </LinearLayout>
-
               <TextView
                   android:id="@+id/pageInfo"
                   android:layout_width="match_parent"
                   android:layout_height="wrap_content"
                   android:gravity="center"
-                  android:padding="6dp"
-                  android:textSize="14sp"/>
+                  android:padding="8dp"/>
 
               <ScrollView
                   android:id="@+id/scrollView"
@@ -208,7 +177,9 @@ jobs:
                       android:layout_width="match_parent"
                       android:layout_height="wrap_content"
                       android:orientation="vertical"/>
+
               </ScrollView>
+
           </LinearLayout>
           EOF
 
@@ -231,19 +202,28 @@ jobs:
                   setContentView(R.layout.activity_main);
 
                   Button open = findViewById(R.id.openPdfButton);
+
                   open.setOnClickListener(v -> {
-                      Intent intent = new Intent(Intent.ACTION_OPEN_DOCUMENT);
+                      Intent intent =
+                              new Intent(Intent.ACTION_OPEN_DOCUMENT);
+
                       intent.setType("application/pdf");
                       intent.addCategory(Intent.CATEGORY_OPENABLE);
+
                       startActivityForResult(intent, PICK_PDF);
                   });
               }
 
               @Override
-              protected void onActivityResult(int requestCode,
-                                              int resultCode,
-                                              Intent data) {
-                  super.onActivityResult(requestCode, resultCode, data);
+              protected void onActivityResult(
+                      int requestCode,
+                      int resultCode,
+                      Intent data) {
+
+                  super.onActivityResult(
+                          requestCode,
+                          resultCode,
+                          data);
 
                   if (requestCode == PICK_PDF &&
                       resultCode == RESULT_OK &&
@@ -252,15 +232,11 @@ jobs:
 
                       Uri uri = data.getData();
 
-                      try {
-                          getContentResolver().takePersistableUriPermission(
-                              uri,
-                              Intent.FLAG_GRANT_READ_URI_PERMISSION
-                          );
-                      } catch (Exception ignored) {
-                      }
+                      Intent intent =
+                              new Intent(
+                                      this,
+                                      ReaderActivity.class);
 
-                      Intent intent = new Intent(this, ReaderActivity.class);
                       intent.setData(uri);
                       startActivity(intent);
                   }
@@ -272,289 +248,201 @@ jobs:
           package com.smartpdfreader;
 
           import android.app.Activity;
-          import android.app.AlertDialog;
-          import android.content.Intent;
           import android.graphics.Bitmap;
           import android.graphics.Color;
           import android.graphics.pdf.PdfRenderer;
           import android.net.Uri;
           import android.os.Bundle;
           import android.os.ParcelFileDescriptor;
-          import android.view.Gravity;
           import android.view.ViewGroup;
-          import android.widget.Button;
-          import android.widget.EditText;
           import android.widget.ImageView;
           import android.widget.LinearLayout;
           import android.widget.ScrollView;
           import android.widget.TextView;
-          import android.widget.Toast;
 
           import java.io.IOException;
 
           public class ReaderActivity extends Activity {
 
               private PdfRenderer renderer;
-              private ParcelFileDescriptor fileDescriptor;
-              private Uri pdfUri;
+              private ParcelFileDescriptor descriptor;
 
-              private LinearLayout pageContainer;
-              private ScrollView scrollView;
+              private LinearLayout container;
               private TextView pageInfo;
+              private ScrollView scrollView;
 
               @Override
               protected void onCreate(Bundle savedInstanceState) {
                   super.onCreate(savedInstanceState);
-                  setContentView(R.layout.activity_reader);
 
-                  pageContainer = findViewById(R.id.pageContainer);
-                  scrollView = findViewById(R.id.scrollView);
-                  pageInfo = findViewById(R.id.pageInfo);
+                  setContentView(
+                          R.layout.activity_reader);
 
-                  Button backButton = findViewById(R.id.backButton);
-                  Button originalButton = findViewById(R.id.originalButton);
-                  Button pageButton = findViewById(R.id.pageButton);
+                  container =
+                          findViewById(
+                                  R.id.pageContainer);
 
-                  backButton.setOnClickListener(v -> finish());
+                  pageInfo =
+                          findViewById(
+                                  R.id.pageInfo);
 
-                  pdfUri = getIntent().getData();
+                  scrollView =
+                          findViewById(
+                                  R.id.scrollView);
 
-                  if (pdfUri == null) {
-                      Toast.makeText(
-                              this,
-                              "No PDF selected",
-                              Toast.LENGTH_LONG
-                      ).show();
-                      finish();
-                      return;
+                  Uri uri =
+                          getIntent().getData();
+
+                  if (uri != null) {
+                      openPdf(uri);
                   }
-
-                  openPdf();
-
-                  originalButton.setOnClickListener(
-                          v -> openOriginalPdf()
-                  );
-
-                  pageButton.setOnClickListener(
-                          v -> showPageDialog()
-                  );
               }
 
-              private void openPdf() {
-                  try {
-                      fileDescriptor =
-                              getContentResolver().openFileDescriptor(
-                                      pdfUri,
-                                      "r"
-                              );
+              private void openPdf(Uri uri) {
 
-                      if (fileDescriptor == null) {
-                          throw new IOException("Unable to open PDF");
+                  try {
+                      descriptor =
+                              getContentResolver()
+                                      .openFileDescriptor(
+                                              uri,
+                                              "r");
+
+                      if (descriptor == null) {
+                          throw new IOException(
+                                  "Cannot open PDF");
                       }
 
-                      renderer = new PdfRenderer(fileDescriptor);
-                      renderAllPages();
+                      renderer =
+                              new PdfRenderer(
+                                      descriptor);
+
+                      int count =
+                              renderer.getPageCount();
+
+                      pageInfo.setText(
+                              "Reading • " +
+                              count +
+                              " pages");
+
+                      for (int i = 0;
+                           i < count;
+                           i++) {
+
+                          renderPage(i);
+                      }
 
                   } catch (Exception e) {
-                      Toast.makeText(
-                              this,
-                              "Unable to open PDF: " + e.getMessage(),
-                              Toast.LENGTH_LONG
-                      ).show();
-                  }
-              }
 
-              private void renderAllPages() {
-                  pageContainer.removeAllViews();
-
-                  int pageCount = renderer.getPageCount();
-
-                  pageInfo.setText(
-                          "Reading • " + pageCount + " pages"
-                  );
-
-                  for (int i = 0; i < pageCount; i++) {
-                      renderPage(i);
+                      pageInfo.setText(
+                              "Unable to open PDF");
                   }
               }
 
               private void renderPage(int index) {
-                  PdfRenderer.Page page = null;
 
-                  try {
-                      page = renderer.openPage(index);
+                  PdfRenderer.Page page =
+                          renderer.openPage(index);
 
-                      float density = getResources()
-                              .getDisplayMetrics()
-                              .density;
+                  int width =
+                          getResources()
+                                  .getDisplayMetrics()
+                                  .widthPixels - 24;
 
-                      int screenWidth = getResources()
-                              .getDisplayMetrics()
-                              .widthPixels;
+                  float scale =
+                          (float) width /
+                          page.getWidth();
 
-                      int availableWidth =
-                              screenWidth - (int)(16 * density);
+                  int height =
+                          (int) (
+                                  page.getHeight()
+                                  * scale
+                          );
 
-                      float scale =
-                              (float) availableWidth /
-                              (float) page.getWidth();
+                  Bitmap bitmap =
+                          Bitmap.createBitmap(
+                                  width,
+                                  height,
+                                  Bitmap.Config.ARGB_8888);
 
-                      int bitmapWidth = Math.max(
-                              1,
-                              (int)(page.getWidth() * scale)
-                      );
+                  bitmap.eraseColor(
+                          Color.WHITE);
 
-                      int bitmapHeight = Math.max(
-                              1,
-                              (int)(page.getHeight() * scale)
-                      );
+                  page.render(
+                          bitmap,
+                          null,
+                          null,
+                          PdfRenderer.Page
+                                  .RENDER_MODE_FOR_DISPLAY);
 
-                      Bitmap bitmap = Bitmap.createBitmap(
-                              bitmapWidth,
-                              bitmapHeight,
-                              Bitmap.Config.ARGB_8888
-                      );
+                  page.close();
 
-                      bitmap.eraseColor(Color.WHITE);
+                  ImageView image =
+                          new ImageView(this);
 
-                      page.render(
-                              bitmap,
-                              null,
-                              null,
-                              PdfRenderer.Page.RENDER_MODE_FOR_DISPLAY
-                      );
+                  image.setImageBitmap(bitmap);
 
-                      ImageView imageView = new ImageView(this);
+                  image.setAdjustViewBounds(
+                          true);
 
-                      imageView.setImageBitmap(bitmap);
-                      imageView.setAdjustViewBounds(true);
-                      imageView.setScaleType(
-                              ImageView.ScaleType.FIT_CENTER
-                      );
-                      imageView.setBackgroundColor(Color.WHITE);
+                  image.setScaleType(
+                          ImageView.ScaleType
+                                  .FIT_CENTER);
 
-                      LinearLayout.LayoutParams params =
-                              new LinearLayout.LayoutParams(
-                                      ViewGroup.LayoutParams.MATCH_PARENT,
-                                      ViewGroup.LayoutParams.WRAP_CONTENT
-                              );
+                  LinearLayout.LayoutParams params =
+                          new LinearLayout.LayoutParams(
+                                  ViewGroup.LayoutParams.MATCH_PARENT,
+                                  ViewGroup.LayoutParams.WRAP_CONTENT);
 
-                      params.setMargins(
-                              (int)(8 * density),
-                              (int)(8 * density),
-                              (int)(8 * density),
-                              (int)(8 * density)
-                      );
+                  params.setMargins(
+                          8,
+                          8,
+                          8,
+                          8);
 
-                      pageContainer.addView(
-                              imageView,
-                              params
-                      );
+                  container.addView(
+                          image,
+                          params);
 
-                      TextView pageNumber =
-                              new TextView(this);
+                  TextView number =
+                          new TextView(this);
 
-                      pageNumber.setText(
-                              "Page " + (index + 1)
-                      );
+                  number.setText(
+                          "Page " +
+                          (index + 1));
 
-                      pageNumber.setGravity(
-                              Gravity.CENTER
-                      );
+                  number.setGravity(17);
 
-                      pageNumber.setPadding(
-                              0,
-                              0,
-                              0,
-                              (int)(8 * density)
-                      );
+                  container.addView(
+                          number);
+              }
 
-                      pageContainer.addView(
-                              pageNumber,
-                              new LinearLayout.LayoutParams(
-                                      ViewGroup.LayoutParams.MATCH_PARENT,
-                                      ViewGroup.LayoutParams.WRAP_CONTENT
-                              )
-                      );
+              @Override
+              protected void onDestroy() {
 
-                  } finally {
-                      if (page != null) {
-                          page.close();
+                  if (renderer != null) {
+                      renderer.close();
+                  }
+
+                  if (descriptor != null) {
+
+                      try {
+                          descriptor.close();
+                      } catch (IOException ignored) {
                       }
                   }
+
+                  super.onDestroy();
               }
+          }
+          EOF
 
-              private void openOriginalPdf() {
-                  try {
-                      Intent intent =
-                              new Intent(Intent.ACTION_VIEW);
+      - name: Build APK
+        working-directory: project
+        run: |
+          gradle --no-daemon assembleDebug
 
-                      intent.setDataAndType(
-                              pdfUri,
-                              "application/pdf"
-                      );
-
-                      intent.addFlags(
-                              Intent.FLAG_GRANT_READ_URI_PERMISSION
-                      );
-
-                      startActivity(intent);
-
-                  } catch (Exception e) {
-                      Toast.makeText(
-                              this,
-                              "No PDF viewer available",
-                              Toast.LENGTH_LONG
-                      ).show();
-                  }
-              }
-
-              private void showPageDialog() {
-                  if (renderer == null) {
-                      return;
-                  }
-
-                  final EditText input =
-                          new EditText(this);
-
-                  input.setInputType(
-                          android.text.InputType.TYPE_CLASS_NUMBER
-                  );
-
-                  input.setHint("Page number");
-
-                  new AlertDialog.Builder(this)
-                          .setTitle("Go to page")
-                          .setView(input)
-                          .setNegativeButton(
-                                  "Cancel",
-                                  null
-                          )
-                          .setPositiveButton(
-                                  "Go",
-                                  (dialog, which) -> {
-                                      try {
-                                          int page =
-                                                  Integer.parseInt(
-                                                          input.getText()
-                                                                  .toString()
-                                                  );
-
-                                          if (page < 1 ||
-                                              page > renderer.getPageCount()) {
-                                              throw new NumberFormatException();
-                                          }
-
-                                          int targetIndex =
-                                                  page - 1;
-
-                                          ViewGroup child =
-                                                  (ViewGroup)
-                                                          pageContainer
-                                                                  .getChildAt(
-                                                                          targetIndex * 2
-                                                                  );
-
-                                          if (child != null) {
-                                              child.post(
-                                           
+      - name: Upload APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: SmartPDFReader-debug
+          path: project/app/build/outputs/apk/debug/app-debug.apk
